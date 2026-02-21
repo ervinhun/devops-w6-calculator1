@@ -2,7 +2,7 @@ name: workflow.yml
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   integration:
