@@ -156,7 +156,7 @@ public class CachedCalculatorTest
         Assert.That(result, Is.False);
     }
     
-    public void IsPrimeEdgeCase()
+    public static void IsPrimeEdgeCase()
     {
         // Arrange
         var calc = new CachedCalculator();
