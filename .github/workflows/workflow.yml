@@ -56,7 +56,7 @@ jobs:
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"BEL-DevOps-Calculator" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
           dotnet build
-          ./.
+          ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: Collect Coverage Report
         if: always()
@@ -67,9 +67,9 @@ jobs:
         # Complete this step sp it uploads the coverage report to the artifacts - make it run always even if previous steps fail
 
       - name: Collect Stryker Report
-        if: always() && steps.run-mutation-tests.outcome == 'success'
+        if: always() && steps.run-mutation-tests.outcome != 'skipped'
         uses: actions/upload-artifact@v4
         with:
           name: stryker-report
-          path: stryker-report
+          path: StrykerOutput
         # Complete this step so it uploads the Stryker report to the artifacts - make it run always even if previous steps fail
