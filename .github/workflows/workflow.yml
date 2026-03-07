@@ -21,42 +21,43 @@ jobs:
       - name: Run unit tests
         run: | # Write a command to execute unit tests while collecting code coverage
           dotnet test --collect:"XPlat Code Coverage" --results-directory TestResults
-        
+
       - name: Generate report
         run: | # Use the ReportGenerator tool to generate a report from the code coverage results
-            reportgenerator -reports:TestResults/**/*.xml -targetdir:coverage-report -reporttypes:Html
+          reportgenerator -reports:TestResults/**/*.xml -targetdir:coverage-report -reporttypes:Html
 
       - name: Run Mutation Tests
+        id: run-mutation-tests
         run: | # Write a command to execute mutation tests using Stryker with a threshold of 80% mutation score
-            dotnet stryker --break-at 80
+          dotnet stryker --break-at 80
+          
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
-            - name: Cache SonarQube packages
-                    uses: actions/cache@v4
-                    with:
-                      path: ~/.sonar/cache
-                      key: ${{ runner.os }}-sonar
-                      restore-keys: ${{ runner.os }}-sonar
-            
-                  - name: Cache SonarQube scanner
-                    id: cache-sonar-scanner
-                    uses: actions/cache@v4
-                    with:
-                      path: ./.sonar/scanner
-                      key: ${{ runner.os }}-sonar-scanner
-                      restore-keys: ${{ runner.os }}-sonar-scanner
-                        
-                  - name: Install SonarQube scanner
-                    if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-                    run: |
-                      mkdir -p ./.sonar/scanner
-                      dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
-            
-                  - name: Build and analyze
-                    run: |
-                      ./.sonar/scanner/dotnet-sonarscanner begin /k:"BEL-DevOps-Calculator" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
-                      dotnet build
-                      ./.
-      
+      - name: Cache SonarQube scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: ./.sonar/scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+
+      - name: Install SonarQube scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./.sonar/scanner
+          dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+
+      - name: Build and analyze
+        run: |
+          ./.sonar/scanner/dotnet-sonarscanner begin /k:"BEL-DevOps-Calculator" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
+          dotnet build
+          ./.
+
       - name: Collect Coverage Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -69,6 +70,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-            name: stryker-report
-            path: stryker-report
+          name: stryker-report
+          path: stryker-report
+        requires: run-mutation-tests
         # Complete this step so it uploads the Stryker report to the artifacts - make it run always even if previous steps fail
