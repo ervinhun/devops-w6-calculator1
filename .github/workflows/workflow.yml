@@ -67,10 +67,9 @@ jobs:
         # Complete this step sp it uploads the coverage report to the artifacts - make it run always even if previous steps fail
 
       - name: Collect Stryker Report
-        if: always()
+        if: always() && steps.run-mutation-tests.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: stryker-report
           path: stryker-report
-        requires: run-mutation-tests
         # Complete this step so it uploads the Stryker report to the artifacts - make it run always even if previous steps fail
