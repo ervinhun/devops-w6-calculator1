@@ -162,6 +162,7 @@ public class CachedCalculatorTest
         Assert.That(result, Is.False);
     }
     
+    [Test]
     public static void IsPrimeEdgeCase()
     {
         // Arrange
