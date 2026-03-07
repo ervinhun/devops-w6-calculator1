@@ -53,11 +53,18 @@ jobs:
           dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
 
       - name: Build and analyze
-        run: |
-          ./.sonar/scanner/dotnet-sonarscanner begin /k:"BEL-DevOps-Calculator" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.cobertura.xml"
-          dotnet build
-          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-          ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+  run: |
+    ./.sonar/scanner/dotnet-sonarscanner begin \
+      /k:"BEL-DevOps-Calculator" \
+      /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+      /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}" \
+      /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml"
+
+    dotnet build
+
+    dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+
+    ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: SonarQube Quality Gate Check
         if: always()
