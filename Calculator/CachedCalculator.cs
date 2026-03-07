@@ -4,9 +4,9 @@ namespace Calculator;
 
 public class CachedCalculator : ICalculator
 {
-    public readonly SimpleCalculator _calculator = new();
-    public readonly Dictionary<string, Calculation> _cache = new();
-    
+    private readonly SimpleCalculator _calculator = new();
+    public Dictionary<string, Calculation> Cache { get; } = new();
+
     public int Add(int a, int b)
     {
         var calc = GetCachedResult<int>(a, b) ?? StoreInCache(_calculator.Add(a, b), a, b);
@@ -46,9 +46,9 @@ public class CachedCalculator : ICalculator
     private Calculation<T>? GetCachedResult<T>(int a, int? b = null, [CallerMemberName]string operation = "")
     {
         var calc = new Calculation<T>(default, operation, a, b);
-        if (_cache.ContainsKey(calc.GetKey()))
+        if (Cache.ContainsKey(calc.GetKey()))
         {
-            return (Calculation<T>?)_cache[calc.GetKey()];
+            return (Calculation<T>?)Cache[calc.GetKey()];
         }
         return null;
     }
@@ -57,7 +57,7 @@ public class CachedCalculator : ICalculator
     {
         var calc = new Calculation<T>(result, operation, a, b);
         calc.Result = result;
-        _cache.Add(calc.GetKey(), calc);
+        Cache.Add(calc.GetKey(), calc);
         return calc;
     }
     
@@ -80,7 +80,7 @@ public class CachedCalculator : ICalculator
         }
     }
 
-    private class Calculation<T>(T? result, string operation, int a, int? b = null)
+    private sealed class Calculation<T>(T? result, string operation, int a, int? b = null)
         : Calculation(operation, a, b)
     {
         public T? Result { get; set; } = result;

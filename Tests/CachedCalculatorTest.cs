@@ -76,11 +76,14 @@ public class CachedCalculatorTest
         var result1 = calc.Multiply(a, b);
         var result2 = calc.Multiply(a, b); // This should hit the cache
 
-        // Assert
-        Assert.That(result1, Is.EqualTo(20));
-        Assert.That(result2, Is.EqualTo(20));
-        Assert.That(calc._cache.Count, Is.EqualTo(1), 
-            "Cache should contain only 1 entry - GetCachedResult prevents duplicates");
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result1, Is.EqualTo(20));
+            Assert.That(result2, Is.EqualTo(20));
+            Assert.That(calc.Cache.Count, Is.EqualTo(1),
+                "Cache should contain only 1 entry - GetCachedResult prevents duplicates");
+        });
     }
 
     [Test]
@@ -95,11 +98,14 @@ public class CachedCalculatorTest
         var result1 = calc.Divide(a, b);
         var result2 = calc.Divide(a, b); // This should hit the cache
 
-        // Assert
-        Assert.That(result1, Is.EqualTo(5));
-        Assert.That(result2, Is.EqualTo(5));
-        Assert.That(calc._cache.Count, Is.EqualTo(1),
-            "Cache should contain only 1 entry - GetCachedResult prevents duplicates");
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result1, Is.EqualTo(5));
+            Assert.That(result2, Is.EqualTo(5));
+            Assert.That(calc.Cache.Count, Is.EqualTo(1),
+                "Cache should contain only 1 entry - GetCachedResult prevents duplicates");
+        });
     }
     
     [Test]
@@ -223,10 +229,13 @@ public class CachedCalculatorTest
         var result1 = calc.Add(a, b);
         var result2 = calc.Add(a, b); // This should hit the cache
 
-        // Assert
-        Assert.That(result1, Is.EqualTo(5));
-        Assert.That(result2, Is.EqualTo(5));
-        Assert.That(calc._cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result1, Is.EqualTo(5));
+            Assert.That(result2, Is.EqualTo(5));
+            Assert.That(calc.Cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        });
     }
     
     [Test]
@@ -239,11 +248,14 @@ public class CachedCalculatorTest
         // Act
         var result1 = calc.Factorial(n);
         var result2 = calc.Factorial(n); // This should hit the cache
-        
-        // Assert
-        Assert.That(result1, Is.EqualTo(120));
-        Assert.That(result2, Is.EqualTo(120));
-        Assert.That(calc._cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        Assert.Multiple(() =>
+        {
+
+            // Assert
+            Assert.That(result1, Is.EqualTo(120));
+            Assert.That(result2, Is.EqualTo(120));
+            Assert.That(calc.Cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        });
     }
     
     [Test]
@@ -256,11 +268,14 @@ public class CachedCalculatorTest
         // Act
         var result1 = calc.IsPrime(candidate);
         var result2 = calc.IsPrime(candidate); // This should hit the cache
-        
-        // Assert
-        Assert.That(result1, Is.True);
-        Assert.That(result2, Is.True);
-        Assert.That(calc._cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        Assert.Multiple(() =>
+        {
+
+            // Assert
+            Assert.That(result1, Is.True);
+            Assert.That(result2, Is.True);
+            Assert.That(calc.Cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        });
     }
     
     [Test]
@@ -273,11 +288,14 @@ public class CachedCalculatorTest
         // Act
         var result1 = calc.IsPrime(candidate);
         var result2 = calc.IsPrime(candidate); // This should hit the cache
-        
-        // Assert
-        Assert.That(result1, Is.False);
-        Assert.That(result2, Is.False);
-        Assert.That(calc._cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        Assert.Multiple(() =>
+        {
+
+            // Assert
+            Assert.That(result1, Is.False);
+            Assert.That(result2, Is.False);
+            Assert.That(calc.Cache.Count, Is.EqualTo(1)); // Ensure only one entry in cache
+        });
     }
     
     [Test]
@@ -298,7 +316,7 @@ public class CachedCalculatorTest
         // With current code (using ?? operator): cache should have 1 entry
         // The second and third calls would hit GetCachedResult and return null ? false
         // so StoreInCache would only be called once
-        Assert.That(calc._cache.Count, Is.EqualTo(1), 
+        Assert.That(calc.Cache.Count, Is.EqualTo(1), 
             "Cache should contain only 1 entry because GetCachedResult checks cache first");
     }
     
@@ -319,7 +337,7 @@ public class CachedCalculatorTest
         // Assert
         // With current code: should have 1 entry
         // Without GetCachedResult check: would have 3 duplicate entries
-        Assert.That(calc._cache.Count, Is.EqualTo(1),
+        Assert.That(calc.Cache.Count, Is.EqualTo(1),
             "Cache should contain only 1 entry for Factorial");
     }
 
@@ -339,7 +357,7 @@ public class CachedCalculatorTest
         // Assert
         // With current code: should have 1 entry
         // Without GetCachedResult check: would have 3 duplicate entries
-        Assert.That(calc._cache.Count, Is.EqualTo(1),
+        Assert.That(calc.Cache.Count, Is.EqualTo(1),
             "Cache should contain only 1 entry for IsPrime");
     }
 
@@ -360,7 +378,7 @@ public class CachedCalculatorTest
         // Assert
         // With current code: should have 1 entry
         // Without GetCachedResult check: would throw "An item with the same key has already been added"
-        Assert.That(calc._cache.Count, Is.EqualTo(1),
+        Assert.That(calc.Cache.Count, Is.EqualTo(1),
             "Cache should contain only 1 entry for Multiply - GetCachedResult must check cache first");
     }
 
@@ -381,7 +399,7 @@ public class CachedCalculatorTest
         // Assert
         // With current code: should have 1 entry
         // Without GetCachedResult check: would throw "An item with the same key has already been added"
-        Assert.That(calc._cache.Count, Is.EqualTo(1),
+        Assert.That(calc.Cache.Count, Is.EqualTo(1),
             "Cache should contain only 1 entry for Divide - GetCachedResult must check cache first");
     }
 
@@ -395,22 +413,25 @@ public class CachedCalculatorTest
 
         // Act
         var firstResult = calc.Add(a, b);
-        var cacheCountAfterFirst = calc._cache.Count;
+        var cacheCountAfterFirst = calc.Cache.Count;
         
         var secondResult = calc.Add(a, b);
-        var cacheCountAfterSecond = calc._cache.Count;
+        var cacheCountAfterSecond = calc.Cache.Count;
 
-        // Assert
-        // Both results should be correct
-        Assert.That(firstResult, Is.EqualTo(15));
-        Assert.That(secondResult, Is.EqualTo(15));
-        
-        // Cache should have 1 entry after first call
-        Assert.That(cacheCountAfterFirst, Is.EqualTo(1));
-        
-        // Cache count should NOT increase after second call (GetCachedResult found it)
-        Assert.That(cacheCountAfterSecond, Is.EqualTo(1),
-            "Second call should not increase cache size - GetCachedResult found the cached value");
+        Assert.Multiple(() =>
+        {
+            // Assert
+            // Both results should be correct
+            Assert.That(firstResult, Is.EqualTo(15));
+            Assert.That(secondResult, Is.EqualTo(15));
+
+            // Cache should have 1 entry after first call
+            Assert.That(cacheCountAfterFirst, Is.EqualTo(1));
+
+            // Cache count should NOT increase after second call (GetCachedResult found it)
+            Assert.That(cacheCountAfterSecond, Is.EqualTo(1),
+                "Second call should not increase cache size - GetCachedResult found the cached value");
+        });
     }
 
     [Test]
@@ -429,7 +450,7 @@ public class CachedCalculatorTest
         
         // Assert
         // Should have 3 entries: one for Add(2,3), one for Subtract(5,2), one for Factorial(5)
-        Assert.That(calc._cache.Count, Is.EqualTo(3),
+        Assert.That(calc.Cache.Count, Is.EqualTo(3),
             "Cache should have 3 entries: 1 Add + 1 Subtract + 1 Factorial");
     }
 
@@ -461,7 +482,7 @@ public class CachedCalculatorTest
         }
 
         // If we got here, the cache lookup (GetCachedResult) is working correctly
-        Assert.That(calc._cache.Count, Is.EqualTo(1));
+        Assert.That(calc.Cache.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -473,19 +494,22 @@ public class CachedCalculatorTest
 
         // Act
         var firstCall = calc.IsPrime(candidate);
-        var firstCacheEntry = calc._cache.First().Value;
+        var firstCacheEntry = calc.Cache.First().Value;
 
         var secondCall = calc.IsPrime(candidate);
-        var secondCacheEntry = calc._cache.First().Value;
+        var secondCacheEntry = calc.Cache.First().Value;
 
-        // Assert
-        Assert.That(firstCall, Is.True);
-        Assert.That(secondCall, Is.True);
-        
-        // The cache entries should be the same object (same reference)
-        // This proves GetCachedResult is returning the cached instance
-        Assert.That(firstCacheEntry, Is.SameAs(secondCacheEntry),
-            "Cache should return the same cached object on repeated calls");
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(firstCall, Is.True);
+            Assert.That(secondCall, Is.True);
+
+            // The cache entries should be the same object (same reference)
+            // This proves GetCachedResult is returning the cached instance
+            Assert.That(firstCacheEntry, Is.SameAs(secondCacheEntry),
+                "Cache should return the same cached object on repeated calls");
+        });
     }
 
     [Test]
@@ -503,13 +527,16 @@ public class CachedCalculatorTest
         }
         sw.Stop();
 
-        // Assert
-        // With proper caching (GetCachedResult), all 1000 calls should be very fast
-        // Without caching, it would recalculate 1000 times and try to add duplicates
-        Assert.That(calc._cache.Count, Is.EqualTo(1),
-            "After 1000 identical calls, cache should still have only 1 entry");
-        
-        Assert.That(sw.ElapsedMilliseconds, Is.LessThan(100),
-            $"1000 cached lookups should be fast (was {sw.ElapsedMilliseconds}ms)");
+        Assert.Multiple(() =>
+        {
+            // Assert
+            // With proper caching (GetCachedResult), all 1000 calls should be very fast
+            // Without caching, it would recalculate 1000 times and try to add duplicates
+            Assert.That(calc.Cache.Count, Is.EqualTo(1),
+                "After 1000 identical calls, cache should still have only 1 entry");
+
+            Assert.That(sw.ElapsedMilliseconds, Is.LessThan(100),
+                $"1000 cached lookups should be fast (was {sw.ElapsedMilliseconds}ms)");
+        });
     }
 }
