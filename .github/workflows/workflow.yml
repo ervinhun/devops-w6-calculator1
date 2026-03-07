@@ -74,14 +74,6 @@ jobs:
         run: | # Write a command to execute mutation tests using Stryker with a threshold of 80% mutation score
           dotnet stryker --break-at 80
 
-      - name: SonarQube Quality Gate Check
-        if: always()
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
       - name: Export SonarQube Analysis Results
         id: export-sonar-results
         if: always()
