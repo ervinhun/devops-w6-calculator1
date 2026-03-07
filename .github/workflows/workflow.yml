@@ -18,19 +18,6 @@ jobs:
           dotnet tool install -g dotnet-reportgenerator-globaltool
           dotnet tool install -g dotnet-stryker
 
-      - name: Run unit tests
-        run: | # Write a command to execute unit tests while collecting code coverage
-          dotnet test --collect:"XPlat Code Coverage" --results-directory TestResults
-
-      - name: Generate report
-        run: | # Use the ReportGenerator tool to generate a report from the code coverage results
-          reportgenerator -reports:TestResults/**/*.xml -targetdir:coverage-report -reporttypes:Html
-
-      - name: Run Mutation Tests
-        id: run-mutation-tests
-        run: | # Write a command to execute mutation tests using Stryker with a threshold of 80% mutation score
-          dotnet stryker --break-at 80
-          
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -52,16 +39,40 @@ jobs:
           mkdir -p ./.sonar/scanner
           dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
 
-      - name: Build and analyze
+      - name: Build and analyze with SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin \
             /k:"BEL-DevOps-Calculator" \
-            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
-            /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}" \
-            /d:sonar.cs.cobertura.reportsPaths="**/TestResults/**/coverage.cobertura.xml"
+            /d:sonar.token="${SONAR_TOKEN}" \
+            /d:sonar.host.url="${SONAR_HOST_URL}" \
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"
           dotnet build
-          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
-          ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/ -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+          ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+
+      - name: Debug - List coverage files
+        if: always()
+        run: |
+          echo "Listing all coverage files:"
+          find TestResults -name "*.xml" -type f
+          echo ""
+          echo "Checking first coverage file:"
+          find TestResults -name "coverage.opencover.xml" -type f | head -1 | xargs ls -lh
+          echo ""
+          echo "Sample of coverage file content:"
+          find TestResults -name "coverage.opencover.xml" -type f | head -1 | xargs head -20
+
+      - name: Generate HTML Coverage Report
+        run: | # Use the ReportGenerator tool to generate a report from the code coverage results
+          reportgenerator -reports:TestResults/**/coverage.opencover.xml -targetdir:coverage-report -reporttypes:Html
+
+      - name: Run Mutation Tests
+        id: run-mutation-tests
+        run: | # Write a command to execute mutation tests using Stryker with a threshold of 80% mutation score
+          dotnet stryker --break-at 80
 
       - name: SonarQube Quality Gate Check
         if: always()
