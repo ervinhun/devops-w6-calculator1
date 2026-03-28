@@ -1,6 +1,6 @@
 name: workflow.yml
 on:
-  push:
+  pull_request:
     branches:
       - master
     paths-ignore:
@@ -117,18 +117,28 @@ jobs:
       - name: Debug - List coverage files
         if: always()
         run: |
+          if [ ! -d TestResults ]; then
+            echo "TestResults not found; skipping coverage debug listing."
+            exit 0
+          fi
           echo "Listing all coverage files:"
           find TestResults -name "*.xml" -type f
           echo ""
           echo "Checking first coverage file:"
-          find TestResults -name "coverage.opencover.xml" -type f | head -1 | xargs ls -lh
+          find TestResults -name "coverage.opencover.xml" -type f | head -1 | xargs -r ls -lh
           echo ""
           echo "Sample of coverage file content:"
-          find TestResults -name "coverage.opencover.xml" -type f | head -1 | xargs head -20
+          find TestResults -name "coverage.opencover.xml" -type f | head -1 | xargs -r head -20
 
       - name: Generate HTML Coverage Report
         run: | # Use the ReportGenerator tool to generate a report from the code coverage results
-          reportgenerator -reports:TestResults/**/coverage.opencover.xml -targetdir:coverage-report -reporttypes:Html
+          if find TestResults -name "coverage.opencover.xml" -type f | grep -q .; then
+            reportgenerator -reports:TestResults/**/coverage.opencover.xml -targetdir:coverage-report -reporttypes:Html
+          else
+            echo "No coverage files found. Skipping HTML coverage report generation."
+            mkdir -p coverage-report
+            echo "Coverage report was not generated because no coverage.opencover.xml files were found." > coverage-report/README.md
+          fi
 
       - name: Run Mutation Tests
         id: run-mutation-tests
