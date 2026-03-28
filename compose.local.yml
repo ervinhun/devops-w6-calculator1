@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: calculator_db_local
+    environment:
+      POSTGRES_USER: calculator_app
+      POSTGRES_PASSWORD: calculator_app
+      POSTGRES_DB: calculator
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U calculator_app -d calculator"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - calculator_db_data:/var/lib/postgresql/data
+
+  flyway:
+    image: redgate/flyway:11-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./flyway/migrations:/flyway/sql
+    command:
+      - -url=jdbc:postgresql://db:5432/calculator
+      - -user=calculator_app
+      - -password=calculator_app
+      - -connectRetries=60
+      - -locations=filesystem:/flyway/sql
+      - migrate
+
+volumes:
+  calculator_db_data:
+

@@ -14,6 +14,8 @@ StrykerOutput/
 # Common node modules locations
 /node_modules
 /wwwroot/node_modules
+client/node_modules/
+client/dist/
 
 ### macOS ###
 # General

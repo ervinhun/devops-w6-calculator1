@@ -1,0 +1,61 @@
+name: Flyway Deploy
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "flyway/migrations/**"
+      - ".github/workflows/flyway-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate migrations
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/flyway/migrations:/flyway/sql" \
+            redgate/flyway:11-alpine \
+            -url="${{ secrets.FLYWAY_URL }}" \
+            -user="${{ secrets.FLYWAY_USER }}" \
+            -password="${{ secrets.FLYWAY_PASSWORD }}" \
+            -locations=filesystem:/flyway/sql \
+            validate
+
+      - name: Run migrations
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/flyway/migrations:/flyway/sql" \
+            redgate/flyway:11-alpine \
+            -url="${{ secrets.FLYWAY_URL }}" \
+            -user="${{ secrets.FLYWAY_USER }}" \
+            -password="${{ secrets.FLYWAY_PASSWORD }}" \
+            -locations=filesystem:/flyway/sql \
+            migrate
+
+      - name: Export Flyway info report
+        if: always()
+        run: |
+          mkdir -p flyway-report
+          docker run --rm \
+            -v "${{ github.workspace }}/flyway/migrations:/flyway/sql" \
+            redgate/flyway:11-alpine \
+            -url="${{ secrets.FLYWAY_URL }}" \
+            -user="${{ secrets.FLYWAY_USER }}" \
+            -password="${{ secrets.FLYWAY_PASSWORD }}" \
+            -locations=filesystem:/flyway/sql \
+            info -outputType=json > flyway-report/info.json
+
+      - name: Upload Flyway report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flyway-report
+          path: flyway-report
+
