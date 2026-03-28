@@ -135,24 +135,30 @@ public class ApiIntegrationTests
         using var client = factory.CreateClient();
 
         var highResponse = await client.GetAsync("/api/calculations/recent?take=500");
-        var highItems = JsonDocument.Parse(await highResponse.Content.ReadAsStringAsync()).RootElement.EnumerateArray().ToArray();
-
-        Assert.Multiple(() =>
+        using (var highDoc = JsonDocument.Parse(await highResponse.Content.ReadAsStringAsync()))
         {
-            Assert.That(highResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(repository.LastRequestedTake, Is.EqualTo(100));
-            Assert.That(highItems.Length, Is.EqualTo(100));
-        });
+            var highItems = highDoc.RootElement.EnumerateArray().ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(highResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(repository.LastRequestedTake, Is.EqualTo(100));
+                Assert.That(highItems.Length, Is.EqualTo(100));
+            });
+        }
 
         var lowResponse = await client.GetAsync("/api/calculations/recent?take=-10");
-        var lowItems = JsonDocument.Parse(await lowResponse.Content.ReadAsStringAsync()).RootElement.EnumerateArray().ToArray();
-
-        Assert.Multiple(() =>
+        using (var lowDoc = JsonDocument.Parse(await lowResponse.Content.ReadAsStringAsync()))
         {
-            Assert.That(lowResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            Assert.That(repository.LastRequestedTake, Is.EqualTo(1));
-            Assert.That(lowItems.Length, Is.EqualTo(1));
-        });
+            var lowItems = lowDoc.RootElement.EnumerateArray().ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(lowResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(repository.LastRequestedTake, Is.EqualTo(1));
+                Assert.That(lowItems.Length, Is.EqualTo(1));
+            });
+        }
     }
 
     [Test]

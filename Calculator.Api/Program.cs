@@ -9,7 +9,7 @@ var connectionString =
     ?? "Host=localhost;Port=5432;Database=calculator;Username=calculator_app;Password=calculator_app";
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton<ICalculator, CachedCalculator>();
+builder.Services.AddScoped<ICalculator, CachedCalculator>();
 builder.Services.AddSingleton<ICalculationHistoryRepository>(_ => new CalculationHistoryRepository(connectionString));
 builder.Services.AddSingleton<ICalculationService, CalculationService>();
 builder.Services.AddCors(options =>
