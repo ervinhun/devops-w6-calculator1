@@ -141,4 +141,5 @@ jobs:
           bump-each-commit: true
           
       - name: Display version
-        run: echo "Version: ${{ steps.semver-app.outputs.version }}"
+        run: |
+          echo "Version: ${{ steps.semver-app.outputs.version }}"
