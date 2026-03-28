@@ -49,6 +49,91 @@ jobs:
       - name: Build Vite project
         run: cd client && npm run build
 
+  e2e-testcafe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install frontend dependencies
+        run: |
+          cd client
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Start services and run TestCafe
+        run: |
+          dotnet build Calculator.Api/Calculator.Api.csproj -c Debug
+
+          dotnet run --project Calculator.Api/Calculator.Api.csproj --configuration Debug --urls http://127.0.0.1:5000 > api-e2e.log 2>&1 &
+          API_PID=$!
+
+          cd client
+          npm run dev -- --host 127.0.0.1 --port 5173 > ../frontend-e2e.log 2>&1 &
+          FRONTEND_PID=$!
+          cd ..
+
+          cleanup() {
+            if [ -n "${FRONTEND_PID:-}" ] && kill -0 "$FRONTEND_PID" 2>/dev/null; then
+              kill "$FRONTEND_PID"
+              wait "$FRONTEND_PID" || true
+            fi
+            if [ -n "${API_PID:-}" ] && kill -0 "$API_PID" 2>/dev/null; then
+              kill "$API_PID"
+              wait "$API_PID" || true
+            fi
+          }
+          trap cleanup EXIT
+
+          for i in {1..40}; do
+            API_READY=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST "http://127.0.0.1:5000/api/calculations" \
+              -H "Content-Type: application/json" \
+              -d '{"operation":"add","a":1,"b":1}' || true)
+            UI_READY=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:5173" || true)
+
+            if [ "$API_READY" = "200" ] && [ "$UI_READY" = "200" ]; then
+              break
+            fi
+
+            sleep 1
+          done
+
+          if [ "$API_READY" != "200" ] || [ "$UI_READY" != "200" ]; then
+            echo "Services did not become ready in time."
+            cat api-e2e.log || true
+            cat frontend-e2e.log || true
+            exit 1
+          fi
+
+          cd client
+          E2E_BASE_URL=http://127.0.0.1:5173 npm run e2e:ci
+
+      - name: Collect TestCafe Artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: testcafe-report
+          path: |
+            api-e2e.log
+            frontend-e2e.log
+            client/e2e-artifacts
+          if-no-files-found: warn
+
   integration:
     runs-on: ubuntu-latest
     steps:
@@ -268,7 +353,7 @@ jobs:
   versioning:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    needs: [integration, frontend-build, performance-spike]
+    needs: [integration, frontend-build, performance-spike, e2e-testcafe]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
