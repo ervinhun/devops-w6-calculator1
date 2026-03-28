@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculator</title>
+  </head>
+  <body>
+    <main class="app">
+      <h1>Calculator</h1>
+      <p class="subtitle">TypeScript frontend that calls the backend calculator and stores each calculation in history.</p>
+
+      <section class="panel">
+        <label for="operation">Operation</label>
+        <select id="operation" name="operation">
+          <option value="add">Add</option>
+          <option value="subtract">Subtract</option>
+          <option value="multiply">Multiply</option>
+          <option value="divide">Divide</option>
+          <option value="factorial">Factorial</option>
+          <option value="isPrime">IsPrime</option>
+        </select>
+
+        <div class="row">
+          <div>
+            <label for="a">A</label>
+            <input id="a" type="number" value="2" />
+          </div>
+          <div>
+            <label for="b">B</label>
+            <input id="b" type="number" value="3" />
+          </div>
+        </div>
+
+        <button id="calculate" type="button">Calculate</button>
+      </section>
+
+      <section class="panel result">
+        <h2>Result</h2>
+        <output id="result">No calculation yet.</output>
+      </section>
+
+      <section class="panel">
+        <h2>Recent History</h2>
+        <ul id="history"></ul>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+

@@ -14,6 +14,8 @@ StrykerOutput/
 # Common node modules locations
 /node_modules
 /wwwroot/node_modules
+client/node_modules/
+client/dist/
 
 ### macOS ###
 # General
@@ -99,6 +101,9 @@ cmake-build-*/
 
 # File-based project format
 *.iws
+
+# Rider DotSettings user file (contains IDE state and local paths)
+*.DotSettings.user
 
 # IntelliJ
 out/
