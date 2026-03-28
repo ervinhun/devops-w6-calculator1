@@ -102,6 +102,9 @@ cmake-build-*/
 # File-based project format
 *.iws
 
+# Rider DotSettings user file (contains IDE state and local paths)
+*.DotSettings.user
+
 # IntelliJ
 out/
 

@@ -50,8 +50,9 @@ public sealed class CalculationService(ICalculator calculator, ICalculationHisto
                 cacheCountAfter == cacheCountBefore,
                 historyPersisted);
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
         {
+            // Expected input validation errors - return 400 Bad Request
             await TryInsertHistoryAsync(
                 normalizedOperation,
                 request.A,
@@ -61,6 +62,33 @@ public sealed class CalculationService(ICalculator calculator, ICalculationHisto
                 ex.Message);
 
             throw new CalculationValidationException(ex.Message);
+        }
+        catch (DivideByZeroException ex)
+        {
+            // Expected runtime error for invalid input - return 400 Bad Request
+            await TryInsertHistoryAsync(
+                normalizedOperation,
+                request.A,
+                request.B,
+                null,
+                false,
+                ex.Message);
+
+            throw new CalculationValidationException("Cannot divide by zero.");
+        }
+        catch (Exception ex)
+        {
+            // Unexpected server-side errors - log but don't expose details to client
+            await TryInsertHistoryAsync(
+                normalizedOperation,
+                request.A,
+                request.B,
+                null,
+                false,
+                ex.Message);
+
+            // Re-throw to allow middleware to handle as 500 error with generic message
+            throw;
         }
     }
 

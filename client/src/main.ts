@@ -2,6 +2,7 @@ import "./styles.css";
 import { executeCalculation, fetchRecentHistory } from "./api";
 import type { HistoryItem, Operation } from "./types";
 
+
 const operationSelect = document.querySelector<HTMLSelectElement>("#operation");
 const inputA = document.querySelector<HTMLInputElement>("#a");
 const inputB = document.querySelector<HTMLInputElement>("#b");
