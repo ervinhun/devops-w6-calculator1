@@ -354,6 +354,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: [integration, frontend-build, performance-spike, e2e-testcafe]
+    outputs:
+      version: ${{ steps.semver-app.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -383,3 +385,70 @@ jobs:
       - name: Display version
         run: |
           echo "Version: ${{ steps.semver-app.outputs.version }}"
+
+  deployment:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    needs: [versioning]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Echo version
+        run: |
+          echo "Version: ${{ needs.versioning.outputs.version }}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_REPO="ghcr.io/${GITHUB_REPOSITORY,,}"
+          VERSION_TAG="v${{ needs.versioning.outputs.version }}"
+
+          docker build \
+            -t "${IMAGE_REPO}:staging" \
+            -t "${IMAGE_REPO}:${VERSION_TAG}" \
+            -f Calculator.Api/Dockerfile \
+            .
+
+          docker push "${IMAGE_REPO}:staging"
+          docker push "${IMAGE_REPO}:${VERSION_TAG}"
+
+      - name: Create release notes
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ needs.versioning.outputs.version }}
+          name: Release v${{ needs.versioning.outputs.version }}
+          generateReleaseNotes: true
+          body: |
+            - Version: v${{ needs.versioning.outputs.version }}
+            - Commit: ${{ github.sha }}
+            - Container image:
+              ghcr.io/${{ github.repository }}:v${{ needs.versioning.outputs.version }}
+
+      - name: Deliver Docker Compose file to staging
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ vars.STAGING_SERVER_IP }}
+          username: ${{ vars.STAGING_SERVER_USERNAME }}
+          key: ${{ secrets.STAGING_SERVER_SSH_KEY }}
+          source: compose.staging.yml
+          target: ~/calculator-deploy/
+
+      - name: Run Docker Compose on staging server
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ vars.STAGING_SERVER_IP }}
+          username: ${{ vars.STAGING_SERVER_USERNAME }}
+          key: ${{ secrets.STAGING_SERVER_SSH_KEY }}
+          script: |
+            cd ~/calculator-deploy
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            IMAGE_NAME="ghcr.io/${{ github.repository }}:staging" CALCULATOR_DB_CONNECTION="${{ secrets.STAGING_CALCULATOR_DB_CONNECTION }}" docker compose -f compose.staging.yml pull
+            IMAGE_NAME="ghcr.io/${{ github.repository }}:staging" CALCULATOR_DB_CONNECTION="${{ secrets.STAGING_CALCULATOR_DB_CONNECTION }}" docker compose -f compose.staging.yml up -d
+
