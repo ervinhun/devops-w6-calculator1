@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "testcafe chrome e2e/**/*.test.js",
+    "e2e:ci": "testcafe \"chrome:headless --no-sandbox --disable-dev-shm-usage\" e2e/**/*.test.js --screenshots path=e2e-artifacts/screenshots,takeOnFails=true"
   },
   "devDependencies": {
+    "testcafe": "^3.7.2",
     "typescript": "^5.9.2",
     "vite": "^7.1.3"
   }
