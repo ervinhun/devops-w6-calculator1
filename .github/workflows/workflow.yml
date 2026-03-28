@@ -7,6 +7,13 @@ on:
       - "coverage-report/**"
       - "StrykerOutput/**"
       - "TestResults/**"
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "coverage-report/**"
+      - "StrykerOutput/**"
+      - "TestResults/**"
 
 jobs:
   frontend-build:
@@ -189,6 +196,7 @@ jobs:
           path: StrykerOutput
         
   versioning:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: [integration, frontend-build]
     steps:
