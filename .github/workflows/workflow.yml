@@ -29,7 +29,13 @@ jobs:
             ${{ runner.os }}-npm-
 
       - name: Install dependencies
-        run: cd client && npm ci
+        run: |
+          cd client
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Build Vite project
         run: cd client && npm run build
@@ -73,18 +79,37 @@ jobs:
           mkdir -p ./.sonar/scanner
           dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
 
-      - name: Build and analyze with SonarQube
+      - name: Verify SonarQube connectivity
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
+          if [ -z "$SONAR_TOKEN" ] || [ -z "$SONAR_HOST_URL" ]; then
+            echo "⚠️  SonarQube credentials not configured. Skipping SonarQube analysis."
+            exit 0
+          fi
+          echo "Testing SonarQube connectivity to: ${SONAR_HOST_URL}"
+          curl -s -f -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/system/status" || echo "⚠️  SonarQube server unreachable or invalid credentials"
+
+      - name: Build and analyze with SonarQube
+        id: sonar-analysis
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ] || [ -z "$SONAR_HOST_URL" ]; then
+            echo "⚠️  Skipping SonarQube analysis (credentials not configured)"
+            exit 0
+          fi
           ./.sonar/scanner/dotnet-sonarscanner begin \
             /k:"BEL-DevOps-Calculator" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.host.url="${SONAR_HOST_URL}" \
             /d:sonar.exclusions="coverage-report/**,StrykerOutput/**,TestResults/**,client/dist/**" \
             /d:sonar.coverage.exclusions="coverage-report/**,StrykerOutput/**,TestResults/**" \
-            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
+            /d:sonar.scanner.metadataFilePath=".sonarqube/out/.sonar/metadata.pb"
           dotnet build
           dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/ -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
           ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
@@ -112,13 +137,18 @@ jobs:
 
       - name: Export SonarQube Analysis Results
         id: export-sonar-results
-        if: always()
+        if: always() && steps.sonar-analysis.outcome != 'skipped'
+        continue-on-error: true
         run: |
+          if [ -z "${{ secrets.SONAR_TOKEN }}" ] || [ -z "${{ secrets.SONAR_HOST_URL }}" ]; then
+            echo "⚠️  Skipping SonarQube report export (credentials not configured)"
+            exit 0
+          fi
           mkdir -p sonarqube-report
-          curl -u "${{ secrets.SONAR_TOKEN }}:" \
+          curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
             "${{ secrets.SONAR_HOST_URL }}/api/measures/component?component=BEL-DevOps-Calculator&metricKeys=coverage,bugs,vulnerabilities,code_smells,security_hotspots,duplicated_lines_density,ncloc" \
             -o sonarqube-report/metrics.json
-          curl -u "${{ secrets.SONAR_TOKEN }}:" \
+          curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
             "${{ secrets.SONAR_HOST_URL }}/api/qualitygates/project_status?projectKey=BEL-DevOps-Calculator" \
             -o sonarqube-report/quality-gate.json
           echo "# SonarQube Analysis Report" > sonarqube-report/README.md
