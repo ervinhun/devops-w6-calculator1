@@ -1,0 +1,11 @@
+{
+  "stryker-config": {
+    "test-projects": ["Tests/Tests.csproj"],
+    "mutate": [
+      "**/*.cs",
+      "!**/Calculator.Api/Persistence/**",
+      "!**/Calculator.Api/Program.cs"
+    ]
+  }
+}
+
